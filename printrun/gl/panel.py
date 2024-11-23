@@ -23,29 +23,28 @@ import wx
 from wx import glcanvas
 
 import pyglet
-pyglet.options['debug_gl'] = True
+pyglet.options['debug_gl'] = False
 pyglet.options['shadow_window'] = False
 
-from pyglet.gl import glEnable, glDisable, GL_LIGHTING, glLightfv, \
-    GL_LIGHT0, GL_LIGHT1, GL_LIGHT2, GL_POSITION, GL_DIFFUSE, \
-    GL_AMBIENT, GL_SPECULAR, GL_COLOR_MATERIAL, \
-    glShadeModel, GL_SMOOTH, GL_NORMALIZE, \
-    GL_BLEND, glBlendFunc, glClear, glClearColor, \
-    glClearDepth, GL_COLOR_BUFFER_BIT, GL_CULL_FACE, \
-    GL_DEPTH_BUFFER_BIT, glDepthFunc, GL_DEPTH_TEST, \
-    GLdouble, glGetDoublev, glGetIntegerv, GLint, \
-    GL_LEQUAL, glLoadIdentity, glMatrixMode, GL_MODELVIEW, \
-    GL_MODELVIEW_MATRIX, GL_ONE_MINUS_SRC_ALPHA, glOrtho, \
-    GL_PROJECTION, GL_PROJECTION_MATRIX, glScalef, \
-    GL_SRC_ALPHA, glTranslatef, gluPerspective, gluUnProject, \
-    glViewport, GL_VIEWPORT, glPushMatrix, glPopMatrix, \
-    glBegin, glVertex2f, glVertex3f, glEnd, GL_LINE_LOOP, glColor3f, \
-    GL_LINE_STIPPLE, glColor4f, glLineStipple
+from pyglet.gl import glEnable, glDisable, GL_BLEND, glBlendFunc, glClear, \
+    glClearColor, glClearDepth, GL_COLOR_BUFFER_BIT, GL_CULL_FACE, \
+    GL_DEPTH_BUFFER_BIT, glDepthFunc, GL_DEPTH_TEST, GLdouble, glGetDoublev, \
+    glGetIntegerv, GLint, GL_LEQUAL, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, \
+    glViewport, GL_VIEWPORT, GL_LINE_LOOP \
+
+from pyglet.gl.gl_compat import GL_LIGHTING, glLightfv, GL_LIGHT0, GL_LIGHT1, \
+    GL_LIGHT2, GL_POSITION, GL_DIFFUSE, GL_AMBIENT, GL_SPECULAR, GL_COLOR_MATERIAL, \
+    glShadeModel, GL_SMOOTH, GL_NORMALIZE, glLoadIdentity, glMatrixMode, \
+    GL_MODELVIEW, GL_MODELVIEW_MATRIX, glOrtho, GL_PROJECTION, \
+    GL_PROJECTION_MATRIX, glScalef, glTranslatef, glPushMatrix, glPopMatrix, \
+    glBegin, glVertex2f, glVertex3f, glEnd, glColor3f, GL_LINE_STIPPLE, glColor4f, \
+    glLineStipple
+
+# gluPerspective, gluUnProject,
 
 from pyglet import gl
 from .trackball import trackball, mulquat, axis_to_quat
 from .libtatlin.actors import vec
-from pyglet.gl.glu import gluOrtho2D
 
 # When Subclassing wx.Window in Windows the focus goes to the wx.Window
 # instead of GLCanvas and it does not draw the focus rectangle and
@@ -302,7 +301,7 @@ class wxGLPanel(BASE_CLASS):
         glMatrixMode(GL_PROJECTION)
         glPushMatrix()
         glLoadIdentity()
-        gluOrtho2D(0, self.width, 0, self.height)
+        glOrtho(0, self.width, 0, self.height, -1.0, 1.0)
 
         glLineStipple(1, 0xf0f0)
         glEnable(GL_LINE_STIPPLE)

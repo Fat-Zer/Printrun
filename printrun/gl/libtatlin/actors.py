@@ -25,18 +25,21 @@ import threading
 
 from ctypes import sizeof
 
-from pyglet.gl import glPushMatrix, glPopMatrix, glTranslatef, \
-    glGenLists, glNewList, GL_COMPILE, glEndList, glCallList, \
-    GL_ELEMENT_ARRAY_BUFFER, GL_UNSIGNED_INT, GL_TRIANGLES, GL_LINE_LOOP, \
-    GL_ARRAY_BUFFER, GL_STATIC_DRAW, glColor4f, glVertex3f, \
-    glBegin, glEnd, GL_LINES, glEnable, glDisable, glGetFloatv, \
-    GL_LINE_SMOOTH, glLineWidth, GL_LINE_WIDTH, GLfloat, GL_FLOAT, GLuint, \
-    glVertexPointer, glColorPointer, glDrawArrays, glDrawRangeElements, \
-    glEnableClientState, glDisableClientState, GL_VERTEX_ARRAY, GL_COLOR_ARRAY, \
-    GL_FRONT_AND_BACK, GL_FRONT, glMaterialfv, GL_SPECULAR, GL_EMISSION, \
-    glColorMaterial, GL_AMBIENT_AND_DIFFUSE, glMaterialf, GL_SHININESS, \
-    GL_NORMAL_ARRAY, glNormalPointer, GL_LIGHTING, glColor3f
-from pyglet.graphics.vertexbuffer import create_buffer, VertexBufferObject
+from pyglet.gl import GL_ELEMENT_ARRAY_BUFFER, GL_UNSIGNED_INT, GL_TRIANGLES, \
+    GL_LINE_LOOP, GL_ARRAY_BUFFER, GL_STATIC_DRAW, GL_LINES, glEnable, \
+    glDisable, glGetFloatv, GL_LINE_SMOOTH, glLineWidth, GL_LINE_WIDTH, \
+    GLfloat, GL_FLOAT, GLuint, glDrawArrays, glDrawRangeElements, \
+    GL_VERTEX_ARRAY, GL_FRONT_AND_BACK, GL_FRONT \
+
+from pyglet.gl.gl_compat import glPushMatrix, glPopMatrix, glTranslatef, \
+    glGenLists, glNewList, GL_COMPILE, glEndList, glCallList, glColor4f, \
+    glVertex3f, glBegin, glEnd, glVertexPointer, glColorPointer, \
+    glEnableClientState, glDisableClientState, GL_COLOR_ARRAY, glMaterialfv, \
+    GL_SPECULAR, GL_EMISSION, glColorMaterial, GL_AMBIENT_AND_DIFFUSE, \
+    glMaterialf, GL_SHININESS, GL_NORMAL_ARRAY, glNormalPointer, GL_LIGHTING, \
+    glColor3f
+
+from pyglet.graphics.vertexbuffer import BufferObject as VertexBufferObject
 
 from printrun.utils import install_locale
 install_locale('pronterface')
@@ -51,9 +54,9 @@ def compile_display_list(func, *options):
     glEndList()
     return display_list
 
-def numpy2vbo(nparray, target = GL_ARRAY_BUFFER, usage = GL_STATIC_DRAW, use_vbos = True):
-    vbo = create_buffer(nparray.nbytes, target = target, usage = usage, vbo = use_vbos)
-    vbo.bind()
+def numpy2vbo(nparray, target = GL_ARRAY_BUFFER, usage = GL_STATIC_DRAW):
+    vbo = VertexBufferObject(nparray.nbytes, usage = usage)
+    vbo.bind(target = target)
     vbo.set_data(nparray.ctypes.data)
     return vbo
 
@@ -374,7 +377,6 @@ class GcodeModel(Model):
     display_travels = True
 
     buffers_created = False
-    use_vbos = True
     loaded = False
     fully_loaded = False
 
@@ -744,7 +746,7 @@ class GcodeModel(Model):
                     cur_vertex += 1
         if self.vertex_color_buffer:
             self.vertex_color_buffer.delete()
-        self.vertex_color_buffer = numpy2vbo(colors, use_vbos = self.use_vbos)
+        self.vertex_color_buffer = numpy2vbo(colors)
 
     # ------------------------------------------------------------------------
     # DRAWING
@@ -760,12 +762,11 @@ class GcodeModel(Model):
                 self.vertex_buffer.delete()
                 self.vertex_color_buffer.delete()
                 self.vertex_normal_buffer.delete()
-            self.travel_buffer = numpy2vbo(self.travels, use_vbos = self.use_vbos)
-            self.index_buffer = numpy2vbo(self.indices, use_vbos = self.use_vbos,
-                                          target = GL_ELEMENT_ARRAY_BUFFER)
-            self.vertex_buffer = numpy2vbo(self.vertices, use_vbos = self.use_vbos)
-            self.vertex_color_buffer = numpy2vbo(self.colors, use_vbos = self.use_vbos)
-            self.vertex_normal_buffer = numpy2vbo(self.normals, use_vbos = self.use_vbos)
+            self.travel_buffer = numpy2vbo(self.travels)
+            self.index_buffer = numpy2vbo(self.indices, target = GL_ELEMENT_ARRAY_BUFFER)
+            self.vertex_buffer = numpy2vbo(self.vertices)
+            self.vertex_color_buffer = numpy2vbo(self.colors)
+            self.vertex_normal_buffer = numpy2vbo(self.normals)
             if self.fully_loaded:
                 # Delete numpy arrays after creating VBOs after full load
                 self.travels = None
@@ -781,9 +782,8 @@ class GcodeModel(Model):
             glTranslatef(self.offset_x, self.offset_y, 0)
             glEnableClientState(GL_VERTEX_ARRAY)
 
-            has_vbo = isinstance(self.vertex_buffer, VertexBufferObject)
             if self.display_travels:
-                self._display_travels(has_vbo)
+                self._display_travels()
 
             glEnable(GL_LIGHTING)
             glEnableClientState(GL_NORMAL_ARRAY)
@@ -793,7 +793,7 @@ class GcodeModel(Model):
             glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50)
 
             glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
-            self._display_movements(has_vbo)
+            self._display_movements()
 
             glDisable(GL_LIGHTING)
 
@@ -803,7 +803,7 @@ class GcodeModel(Model):
 
             glPopMatrix()
 
-    def _display_travels(self, has_vbo):
+    def _display_travels(self):
         self.travel_buffer.bind()
         glVertexPointer(3, GL_FLOAT, 0, self.travel_buffer.ptr)
 
@@ -834,7 +834,7 @@ class GcodeModel(Model):
                             GL_UNSIGNED_INT,
                             sizeof(GLuint) * self.count_print_indices[start - 1])
 
-    def _display_movements(self, has_vbo):
+    def _display_movements(self):
         self.vertex_buffer.bind()
         glVertexPointer(3, GL_FLOAT, 0, self.vertex_buffer.ptr)
 
@@ -920,7 +920,6 @@ class GcodeModelLight(Model):
     color_current_printed = (0.1, 0.4, 0, 0.8)
 
     buffers_created = False
-    use_vbos = True
     loaded = False
     fully_loaded = False
 
@@ -1047,8 +1046,8 @@ class GcodeModelLight(Model):
             if self.buffers_created:
                 self.vertex_buffer.delete()
                 self.vertex_color_buffer.delete()
-            self.vertex_buffer = numpy2vbo(self.vertices, use_vbos = self.use_vbos)
-            self.vertex_color_buffer = numpy2vbo(self.colors, use_vbos = self.use_vbos)  # each pair of vertices shares the color
+            self.vertex_buffer = numpy2vbo(self.vertices)
+            self.vertex_color_buffer = numpy2vbo(self.colors)  # each pair of vertices shares the color
             if self.fully_loaded:
                 # Delete numpy arrays after creating VBOs after full load
                 self.vertices = None
@@ -1070,17 +1069,10 @@ class GcodeModelLight(Model):
 
     def _display_movements(self, mode_2d=False):
         self.vertex_buffer.bind()
-        has_vbo = isinstance(self.vertex_buffer, VertexBufferObject)
-        if has_vbo:
-            glVertexPointer(3, GL_FLOAT, 0, None)
-        else:
-            glVertexPointer(3, GL_FLOAT, 0, self.vertex_buffer.ptr)
+        glVertexPointer(3, GL_FLOAT, 0, None)
 
         self.vertex_color_buffer.bind()
-        if has_vbo:
-            glColorPointer(4, GL_FLOAT, 0, None)
-        else:
-            glColorPointer(4, GL_FLOAT, 0, self.vertex_color_buffer.ptr)
+        glColorPointer(4, GL_FLOAT, 0, None)
 
         # Prevent race condition by using the number of currently loaded layers
         max_layers = self.layers_loaded

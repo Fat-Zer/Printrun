@@ -24,9 +24,9 @@ from .gl.trackball import build_rotmatrix
 from .gl.libtatlin import actors
 from .injectgcode import injector, injector_edit
 
-from pyglet.gl import glPushMatrix, glPopMatrix, \
-    glTranslatef, glRotatef, glScalef, glMultMatrixd, \
-    glGetDoublev, GL_MODELVIEW_MATRIX, GLdouble
+from pyglet.gl import glGetDoublev, GLdouble
+from pyglet.gl.gl_compat import glPushMatrix, glPopMatrix, glTranslatef, \
+    glRotatef, glScalef, glMultMatrixd, GL_MODELVIEW_MATRIX
 
 from .gviz import GvizBaseFrame
 
