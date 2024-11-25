@@ -46,6 +46,19 @@ from pyglet import gl
 from .trackball import trackball, mulquat, axis_to_quat
 from .libtatlin.actors import vec
 
+def gluUnProject(x, y, z, mvmat, pmat, viewport, px, py, pz):
+    mv = numpy.asmatrix(numpy.array(mvmat).reshape((4,4)))
+    p = numpy.asmatrix(numpy.array(pmat).reshape((4,4)))
+    view = numpy.array(viewport)
+
+    (px.value, py.value, pz.value, _) = numpy.linalg.inv(mv*p) * \
+        numpy.array([ [ (2*x-view[0]) / view[2] - 1. ],
+                      [ (2*y-view[1]) / view[2] - 1. ],
+                      [  2*z - 1. ],
+                      [  1. ]
+            ])
+
+
 # When Subclassing wx.Window in Windows the focus goes to the wx.Window
 # instead of GLCanvas and it does not draw the focus rectangle and
 # does not consume used keystrokes
