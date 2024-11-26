@@ -38,7 +38,7 @@ from pyglet.gl.gl_compat import GL_LIGHTING, glLightfv, GL_LIGHT0, GL_LIGHT1, \
     GL_MODELVIEW, GL_MODELVIEW_MATRIX, glOrtho, GL_PROJECTION, \
     GL_PROJECTION_MATRIX, glScalef, glTranslatef, glPushMatrix, glPopMatrix, \
     glBegin, glVertex2f, glVertex3f, glEnd, glColor3f, GL_LINE_STIPPLE, glColor4f, \
-    glLineStipple
+    glLineStipple, glLoadMatrixf
 
 # gluPerspective, gluUnProject,
 
@@ -234,7 +234,8 @@ class wxGLPanel(BASE_CLASS):
             glOrtho(-width / 2, width / 2, -height / 2, height / 2,
                     -5 * self.dist, 5 * self.dist)
         else:
-            gluPerspective(60., float(width) / height, 10.0, 3 * self.dist)
+            mat = pyglet.math.Mat4.perspective_projection(float(width) / height, 10.0, 3 * self.dist)
+            glLoadMatrixf(vec(*mat))
             glTranslatef(0, 0, -self.dist)  # Move back
         glMatrixMode(GL_MODELVIEW)
 
